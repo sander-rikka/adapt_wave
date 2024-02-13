@@ -5,7 +5,7 @@ import pydap
 import pandas as pd
 import numpy as np
 import numpy.ma as ma
-from datetime import datetime
+import datetime as dt
 from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import griddata
 # %matplotlib inline
@@ -53,7 +53,18 @@ if __name__ == '__main__':
     DS = xr.open_dataset(data_store)
 
     time = pd.to_datetime(DS.time.data)
-    hs = DS.VHM0.sel(time=slice("2004-01-01", "2004-02-15")).mean('time').plot()
-    print(hs)
+    hs_arr = []
+    for i in range(0, len(time), 15):
+        start_date = dt.datetime.strptime(time[i], '%Y-%m-%d')
+        end_date = dt.datetime.strptime(time[i + 15], '%Y-%m-%d') # siin peab mingi parem indekseerimine olema...
+        # praegu jookseb i+15 üle aastas olevate päevade arvu. aga vb ei peagi aasta kaupa jagama?
+        hs = DS.VHM0.sel(time=slice(f'{start_date}2004-01-01', f'{end_date}2004-02-15')).mean('time').plot()
+        if i == 0:
+            hs_arr = hs.reshape((1, 1, 256, 256))  # esimene tühi dimensioon pole vajalik
+        else:
+            hs_arr = np.append(hs_arr, hs.reshape((1, 1, 256, 256)),
+                                axis=0)
+        # kui aasta läbi, siis salvestada array? v salvestada kuude kaupa arrayd koos muutujatega, mis hiljem vajalikud oleks???
+    #print(hs)
 
     print('The end!')
